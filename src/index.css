@@ -14,3 +14,12 @@ body {
   overflow-x: hidden;
 }
 
+.custom-icons {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.leaflet-control-container .leaflet-routing-container-hide {
+  display: none !important;
+}

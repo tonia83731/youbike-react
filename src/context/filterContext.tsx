@@ -3,6 +3,9 @@ import { createContext, useContext, type ReactNode } from "react";
 import { useState, useEffect } from "react";
 import { getTaipeiBikeInfo } from "../api/getYoubikeInfo";
 import { taipei_dis } from "../data/taipei_district";
+import type { Map } from "leaflet";
+import L from "leaflet";
+import 'leaflet-routing-machine'
 
 export type StopInfoType = {
     sno: string
@@ -27,13 +30,25 @@ export type StopInfoType = {
 
 export type LocationType = {
     lat: number
-    long: number
+    lng: number
+}
+export type StopShortInfoType = {
+    stopName: string 
+    stopRent: number
+    stopReturn: number
+}
+export type RouteGuildType = {
+    distance: number
+    time: string
 }
 
 type ProviderProps = {
     children: ReactNode
 }
+
 type FilterContextType = {
+    map: Map | null;
+    taipei_center: LocationType;
     isLoading: boolean
     filterStopDatas: StopInfoType[]
     searchInput: string
@@ -41,16 +56,19 @@ type FilterContextType = {
     districtGroup: string[][]
     currPage: number
     totalPage: number,
-    userLocation: LocationType
+    userLocation: LocationType | null
     stopLocation: LocationType | null
+    stopLocationInfo: StopShortInfoType | null
+    routeGuide: RouteGuildType | null
     districtToggle: boolean
+    mapInitialized: (map: Map) => void
     handleArrowClick: (type: 'first' | 'last' | 'prev' | 'next') => void
     handlePageClick: (page: number) => void
     handleSearchChange: (input: string) => void
     handleSearchClear: () => void
     handleSearchFilterChange: (isChecked: boolean, district: string) => void
-    handleStopLocation: (lat: number, long: number) => void
-    handleUserLocation: (lat: number, long: number) => void
+    handleStopLocation: (stopName: string, stopRent: number, stopReturn: number, lat: number, lng: number) => void
+    handleUserLocation: () => void
     handleDistrictToggle: () => void
     handleSearchTagClear: (district?: string) => void
 }
@@ -83,13 +101,20 @@ const FilterProvider = ({children}: ProviderProps) => {
     // const totalPage = Math.ceil(filterStopDatas.length / perPage)
     
     // ----------------------------------------------------
-    // 追蹤使用者目前位置 Default是taipei city中心
-    const [userLocation, setUserLocation] = useState<LocationType>({
+    const taipei_center = {
         lat: 25.0330,
-        long: 121.5654
-    })
+        lng: 121.5654
+    }
+    // 追蹤使用者目前位置 Default是taipei city中心
+    const [userLocation, setUserLocation] = useState<LocationType | null>(null)
     // 使用者要追蹤的youbile車站地點 Default是null
+    const [stopLocationInfo, setStopLocationInfo] = useState<StopShortInfoType | null>(null)
     const [stopLocation, setStopLocation] = useState<LocationType | null>(null)
+    // user & stop 之間步行距離時間
+     const [routeGuide, setRouteGuide] = useState< RouteGuildType| null>(null)
+    // 處理 map 相關 Data
+    const [map, setMap] = useState<Map | null>(null)
+    
     // ----------------------------------------------------
 
     // 搜尋function
@@ -102,7 +127,7 @@ const FilterProvider = ({children}: ProviderProps) => {
 
     const handleSearchFilterChange = (isChecked: boolean, district: string) => {
         if (district === "all") {
-            setSearchFilter(isChecked ? [...taipei_dis] : [taipei_dis[0]])
+            setSearchFilter(isChecked ? [...taipei_dis] : [])
         } else {
             const isInclude = searchFilter.includes(district)
             if (isInclude) {
@@ -127,19 +152,30 @@ const FilterProvider = ({children}: ProviderProps) => {
         )
       }
     const handlePageClick = (page: number) => {
-    setCurrPage(page)
+        setCurrPage(page)
     }
-
-    // 取得點選車站位置
-    const handleStopLocation = (lat: number, long: number) => {
-        const position: LocationType = {lat, long}
-        setStopLocation(position)
+    // 取得地圖最新資訊 （initialized）
+    const mapInitialized = (map: Map) => {
+        setMap(map)
     }
     // 取得使用者目前位置
-    const handleUserLocation  = (lat: number, long: number) => {
-        const position: LocationType = {lat, long}
-        setUserLocation(position)
+    const handleUserLocation  = () => {
+        if (!map) return
+        map.locate({ setView: true, enableHighAccuracy: true })
+        map.once("locationfound", (e) => {
+            const {lat, lng} = e.latlng
+            setUserLocation({lat, lng})
+        })
+        map.once("locationerror", (e) => {
+            console.error("Location error: ", e.message)
+        })
     }
+    // 取得點選車站位置
+    const handleStopLocation = (stopName: string, stopRent: number, stopReturn: number, lat: number, lng: number) => {
+        setStopLocationInfo({stopName, stopRent, stopReturn})
+        setStopLocation({lat, lng})
+    }
+
 
     // 處理District Toggle --> 只適用於mobile
     const handleDistrictToggle = () => {
@@ -188,27 +224,19 @@ const FilterProvider = ({children}: ProviderProps) => {
             setIsLoading(false)
           }
         }
-        // 取得使用者目前位置
-        
-
-
+    
         fetchBikeInfoAsync()
       }, [])
       // 依據使用者輸入的filter, pagination調整數量
       useEffect(() => {
         let datas = stopDatas;
-        let isFiltered = false
         if (searchInput.trim() !== "") {
             datas = datas.filter((stop) => stop.sna.includes(searchInput) || stop.ar.includes(searchInput))
-            isFiltered = true
         }
 
-        if (searchFilter.length > 0) {
+        if (searchFilter.length > 0 && searchFilter.length < 13) {
             datas = datas.filter((stop) => searchFilter.includes(stop.sarea))
-            isFiltered = true
         }
-
-        if (isFiltered) setCurrPage(1)
         
         // --------------------------------------
         // 計算總共幾頁
@@ -216,14 +244,65 @@ const FilterProvider = ({children}: ProviderProps) => {
         setTotalPage(total)
         // --------------------------------------
         // 計算當前頁面有幾個datas
-        const firstIdx = currPage - 1
+        const firstIdx = (currPage - 1) * perPage
         const lastIdx = firstIdx + perPage
         const sliceStops = datas.slice(firstIdx, lastIdx)
         setFilterStopDatas(sliceStops)
 
-      }, [searchInput, searchFilter, currPage, perPage])
+      }, [searchInput, searchFilter, currPage, perPage, stopDatas])
 
-    return <FilterContext.Provider value={{
+      useEffect(() => {
+            setCurrPage(1)
+        }, [searchInput, searchFilter])
+      // map 顯示 站點
+      useEffect(() => {
+        if (!map) return
+
+        const points : [number, number][] = []
+        if (userLocation) points.push([userLocation.lat, userLocation.lng])
+        if (stopLocation) points.push([stopLocation.lat, stopLocation.lng])
+
+        if (points.length === 1) {
+            map.setView(points[0], 16)
+        } else if (points.length === 2) {
+            map.fitBounds(points, { padding: [50, 50] })
+        }
+      }, [map, userLocation, stopLocation])
+
+      useEffect(() => {
+            if (!map || !userLocation || !stopLocation) return
+                const routingControl = L.Routing.control({
+                waypoints: [
+                    L.latLng(userLocation.lat, userLocation.lng),
+                    L.latLng(stopLocation.lat, stopLocation.lng)
+                ],
+                router: L.Routing.osrmv1({
+                    serviceUrl: 'https://router.project-osrm.org/route/v1',
+                    profile: "foot",
+                }),
+                show: false,
+                addWaypoints: false,
+                routeWhileDragging: false,
+                createMarker: () => null
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any).addTo(map)
+
+            routingControl.on('routesfound', (e) => {
+                const summary = e.routes[0].summary
+                // console.log(e.routes, summary.totalTime)
+                const distance = summary.totalDistance / 1000
+                const time = (summary.totalTime / 60).toFixed(1);
+                setRouteGuide({ distance, time })
+            })
+
+            return () => {
+                map.removeControl(routingControl)
+            }
+        }, [userLocation, stopLocation, map])
+    
+      return <FilterContext.Provider value={{
+        map,
+        taipei_center,
         isLoading,
         filterStopDatas,
         searchInput,
@@ -233,7 +312,10 @@ const FilterProvider = ({children}: ProviderProps) => {
         totalPage,
         userLocation,
         stopLocation,
+        stopLocationInfo,
+        routeGuide,
         districtToggle,
+        mapInitialized,
         handleArrowClick,
         handlePageClick,
         handleSearchChange,

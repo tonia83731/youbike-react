@@ -6,7 +6,7 @@ const theadData = ['縣市', '區域', '站點名稱', '可借車輛', '可還�
 
 
 const StopTable = () => {
-  const {filterStopDatas, handleStopLocation} = useFilterContext()
+  const {searchFilter, filterStopDatas, handleStopLocation} = useFilterContext()
 
   return <table className="border-collapse border-spacing-0 w-full rounded-lg md:rounded-[28px] overflow-hidden border-[0.5] border-gray_table_border md:text-lg">
     <thead className="bg-light_green text-light font-medium text-sm md:text-base">
@@ -18,24 +18,34 @@ const StopTable = () => {
         }
       </tr>
     </thead>
-    <tbody className="text-sm md:text-base">
-      {
-        filterStopDatas.map(({sno, sarea, sna, latitude, longitude, available_rent_bikes, available_return_bikes}, idx) => {
-          return <tr key={sno} className={`h-[72px] ${idx % 2 === 1 ? 'bg-gray' : ''}`}>
-            <td className="text-center hidden md:table-cell">臺北市</td>
-            <td className="text-center">{sarea}</td>
-            <td className="flex h-[72px] justify-start items-center gap-1">
-              <div>{replace(sna)}</div>
-              <button onClick={() => handleStopLocation(latitude, longitude)} className="">
-                <FaMapLocationDot />
-              </button>
-            </td>
-            <td className={`${available_rent_bikes <= 3 ? "text-red-500" : "text-olive"} text-lg md:text-xl font-bold text-center`}>{available_rent_bikes}</td>
-            <td className={`${available_return_bikes <= 3 ? "text-red-500" : "text-olive"} text-lg md:text-xl font-bold text-center`}>{available_return_bikes}</td>
-          </tr>
-        })
-      }
-    </tbody>
+    {
+      searchFilter.length === 0 ? <tbody className="w-full h-[72px] text-center text-gray_table_border">
+        <tr>
+          <td colSpan={5} className="text-center">
+            沒有符合條件的站點，請調整搜尋或區域選項
+          </td>
+        </tr>
+      </tbody> : <>
+        <tbody className="text-sm md:text-base">
+          {
+            filterStopDatas.map(({sno, sarea, sna, latitude, longitude, available_rent_bikes, available_return_bikes}, idx) => {
+              return <tr key={sno} className={`h-[72px] ${idx % 2 === 1 ? 'bg-gray' : ''}`}>
+                <td className="text-center hidden md:table-cell">臺北市</td>
+                <td className="text-center">{sarea}</td>
+                <td className="flex h-[72px] justify-start items-center gap-1">
+                  <div>{replace(sna)}</div>
+                  <button onClick={() => handleStopLocation(sna, available_rent_bikes, available_return_bikes, latitude, longitude)} className="">
+                    <FaMapLocationDot />
+                  </button>
+                </td>
+                <td className={`${available_rent_bikes <= 3 ? "text-red-500" : "text-olive"} text-lg md:text-xl font-bold text-center`}>{available_rent_bikes}</td>
+                <td className={`${available_return_bikes <= 3 ? "text-red-500" : "text-olive"} text-lg md:text-xl font-bold text-center`}>{available_return_bikes}</td>
+              </tr>
+            })
+          }
+      </tbody> 
+      </>
+    }
   </table>
 }
 

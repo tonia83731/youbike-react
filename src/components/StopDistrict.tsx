@@ -9,7 +9,7 @@ const StopDistrict = () => {
       <StopCheckbox
         id="all"
         district="全部選取"
-        isChecked={searchFilter.length === 12}
+        isChecked={searchFilter.length === 13}
         onCheckboxChange={(ischecked) => handleSearchFilterChange(ischecked, 'all')}
       />
       <div className="flex flex-col justify-center w-full items-center gap-4 lg:gap-6">

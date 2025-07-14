@@ -5,9 +5,11 @@ import StopSearchGroup from "./components/StopSearchGroup"
 import StopDistrict from "./components/StopDistrict"
 import { useFilterContext } from "./context/filterContext"
 import StopTags from "./components/StopTags"
+import StopMap from "./components/StopMap"
+import { MapContainer } from "react-leaflet"
 
 function App() {
-  const {districtToggle} = useFilterContext()
+  const {districtToggle, taipei_center, routeGuide} = useFilterContext()
 
   
 
@@ -28,7 +30,23 @@ function App() {
             {districtToggle && <StopDistrict />}
           </div>
           {/* map */}
-          <img src="https://images.unsplash.com/photo-1751013781844-fa6a78089e49" alt="map-area" className="w-full h-full object-cover" />
+         <div className="flex flex-col gap-1 relative">
+           <MapContainer
+            center={[taipei_center.lat, taipei_center.lng]}
+            zoom={13}
+            scrollWheelZoom={true}
+            style={{ width: "100%", height: "300px" }}
+          >
+            <StopMap />
+          </MapContainer>
+          {
+            routeGuide && <ul className="bg-white/80 shadow-sm rounded-md z-[999] absolute top-1 right-1 p-4">
+              <li className="">站點距離: {routeGuide?.distance} 公里</li>
+              <li className="">步行時間(參考): {routeGuide?.time} 分鐘 </li>
+          </ul>
+          }
+         </div>
+          {/* <img src="https://images.unsplash.com/photo-1751013781844-fa6a78089e49" alt="map-area" className="w-full h-full object-cover" /> */}
         </div>
         {/* table */}
         <StopTable />

@@ -22,7 +22,6 @@ const arraw_styles = "w-6 h-6 md:w-8 md:h-8 flex justify-center items-center hov
 
 const Pagination = () => {
     const {currPage, totalPage, handleArrowClick, handlePageClick} = useFilterContext()
-  
     const showedPage = slicePageArr(currPage, totalPage)
     return <div className="flex flex-col md:flex-row justify-end items-center gap-2">
       <div className="flex items-center gap-1">
