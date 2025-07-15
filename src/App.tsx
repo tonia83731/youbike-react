@@ -46,7 +46,6 @@ function App() {
           </ul>
           }
          </div>
-          {/* <img src="https://images.unsplash.com/photo-1751013781844-fa6a78089e49" alt="map-area" className="w-full h-full object-cover" /> */}
         </div>
         {/* table */}
         <StopTable />

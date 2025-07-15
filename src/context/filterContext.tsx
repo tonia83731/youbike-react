@@ -50,6 +50,7 @@ type FilterContextType = {
     map: Map | null;
     taipei_center: LocationType;
     isLoading: boolean
+    stopDatas: StopInfoType[]
     filterStopDatas: StopInfoType[]
     searchInput: string
     searchFilter: string[]
@@ -160,6 +161,11 @@ const FilterProvider = ({children}: ProviderProps) => {
     }
     // 取得使用者目前位置
     const handleUserLocation  = () => {
+        if (userLocation !== null) {
+            setUserLocation(null)
+            return
+        }
+        
         if (!map) return
         map.locate({ setView: true, enableHighAccuracy: true })
         map.once("locationfound", (e) => {
@@ -304,6 +310,7 @@ const FilterProvider = ({children}: ProviderProps) => {
         map,
         taipei_center,
         isLoading,
+        stopDatas,
         filterStopDatas,
         searchInput,
         searchFilter,

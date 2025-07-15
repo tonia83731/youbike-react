@@ -1,14 +1,18 @@
 import { Marker, Popup, TileLayer, useMap } from "react-leaflet"
 import { useFilterContext } from "../context/filterContext"
 import { useEffect } from "react"
-import userLocationIcon from "../assets/userLocation.png"
-import stopLocationIcon from "../assets/stopLocation.png"
+import userLocationIcon from "../assets/UserLocation.png"
+import stopLocationIcon from "../assets/SelectLocation.png"
+import basicLocationIcon from "../assets/BasicLocation.png"
+
 import L from "leaflet"
+import MarkerClusterGroup from "react-leaflet-markercluster"
+import { replace } from "../util/replace"
 
 
 const StopMap = () => {
     // const [routeGuide, setRouteGuide] = useState< RouteGuildType| null>(null)
-    const { userLocation, stopLocation, stopLocationInfo, mapInitialized } = useFilterContext()
+    const { stopDatas, userLocation, stopLocation, stopLocationInfo, mapInitialized, handleStopLocation } = useFilterContext()
     const map = useMap()
 
     const userIcon = L.divIcon({
@@ -27,8 +31,13 @@ const StopMap = () => {
         className: "custom-icons"
     })
 
-
-
+    const basicIcon = L.divIcon({
+        html: `<img src="${basicLocationIcon}" alt="user position" style="width:28px; height:35px;" />`,
+        iconSize: [28, 35],      // Must match rendered width and height
+        iconAnchor: [14, 35],    // Bottom center of image aligns with location
+        popupAnchor: [0, -35],   // Opens above the marker
+        className: "custom-icons"
+    })
 
     useEffect(() => {
         mapInitialized(map)
@@ -57,12 +66,26 @@ const StopMap = () => {
                 </div>
             </Popup>
         </Marker>}
-        {/* {
-            <ul className="list-outside list-disc pl-4">
-                <li className="">站點距離: {routeGuide?.distance} km</li>
-                <li className="">步行時間: {routeGuide?.time} mins</li>
-            </ul>
-        } */}
+        {
+            stopDatas.length > 0 && <MarkerClusterGroup>
+                {
+                stopDatas.map(({sna, sarea, latitude, longitude, available_rent_bikes, available_return_bikes}, idx) => {
+                    if (stopLocation && stopLocation.lat === latitude && stopLocation.lng === longitude) return
+                    return <Marker key={`makercluster-${idx}`} position={[latitude, longitude]} icon={basicIcon}>
+                        <Popup>
+                            <div className="flex flex-col gap-2 items-center">
+                                <div>{replace(sna)} ({sarea})</div>
+                                <button className="bg-light_green text-white px-4 py-0.5 rounded-md" onClick={() => handleStopLocation(sna,available_rent_bikes, available_return_bikes, latitude, longitude)}>
+                                    選擇
+                                </button>
+                            </div>
+                        </Popup>
+                    </Marker>
+                })
+                }
+            </MarkerClusterGroup>
+        }
+        
     </>
 }
 
