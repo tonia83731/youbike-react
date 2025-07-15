@@ -50,7 +50,7 @@ type FilterContextType = {
     map: Map | null;
     taipei_center: LocationType;
     isLoading: boolean
-    stopDatas: StopInfoType[]
+    markerStopDatas: StopInfoType[]
     filterStopDatas: StopInfoType[]
     searchInput: string
     searchFilter: string[]
@@ -83,7 +83,9 @@ const FilterProvider = ({children}: ProviderProps) => {
     const [stopDatas, setStopDatas] = useState<StopInfoType[]>([])
     // youbike車站資料 --> 依據使用者行為改變
     const [filterStopDatas, setFilterStopDatas] = useState<StopInfoType[]>([])
-
+    // marker 專用 filter資料
+    const [markerStopDatas, setMarkerStopDatas] =  useState<StopInfoType[]>([])
+    
     // 搜尋youbike名稱（ana）或 youbike車站地址（ar）
     const [searchInput, setSearchInput] = useState("")
     // 搜尋oubike站點區域
@@ -244,6 +246,10 @@ const FilterProvider = ({children}: ProviderProps) => {
             datas = datas.filter((stop) => searchFilter.includes(stop.sarea))
         }
         
+        // 儲存marker資料
+        setMarkerStopDatas(datas)
+        // 清除選擇的站點
+        // setStopLocation(null)
         // --------------------------------------
         // 計算總共幾頁
         const total = Math.ceil(datas.length / perPage)
@@ -310,7 +316,7 @@ const FilterProvider = ({children}: ProviderProps) => {
         map,
         taipei_center,
         isLoading,
-        stopDatas,
+        markerStopDatas,
         filterStopDatas,
         searchInput,
         searchFilter,

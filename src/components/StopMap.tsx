@@ -12,8 +12,10 @@ import { replace } from "../util/replace"
 
 const StopMap = () => {
     // const [routeGuide, setRouteGuide] = useState< RouteGuildType| null>(null)
-    const { stopDatas, userLocation, stopLocation, stopLocationInfo, mapInitialized, handleStopLocation } = useFilterContext()
+    const { markerStopDatas, userLocation, stopLocation, stopLocationInfo, mapInitialized, handleStopLocation } = useFilterContext()
     const map = useMap()
+
+    console.log(markerStopDatas)
 
     const userIcon = L.divIcon({
         html: `<img src="${userLocationIcon}" alt="user position" style="width:32px; height:40px;" />`,
@@ -67,9 +69,9 @@ const StopMap = () => {
             </Popup>
         </Marker>}
         {
-            stopDatas.length > 0 && <MarkerClusterGroup>
+            markerStopDatas.length > 0 && <MarkerClusterGroup key={markerStopDatas.length}>
                 {
-                stopDatas.map(({sna, sarea, latitude, longitude, available_rent_bikes, available_return_bikes}, idx) => {
+                markerStopDatas.map(({sna, sarea, latitude, longitude, available_rent_bikes, available_return_bikes}, idx) => {
                     if (stopLocation && stopLocation.lat === latitude && stopLocation.lng === longitude) return
                     return <Marker key={`makercluster-${idx}`} position={[latitude, longitude]} icon={basicIcon}>
                         <Popup>
