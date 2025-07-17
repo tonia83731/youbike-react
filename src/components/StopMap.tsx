@@ -63,7 +63,7 @@ const StopMap = () => {
                     <h5 className="font-bold text-olive">{stopLocationInfo?.stopName}</h5>
                     <ul className="list-disc list-outside pl-4">
                         <li className="">可借車輛: {stopLocationInfo?.stopRent}</li>
-                        <li className="">可還空位: {stopLocationInfo?.stopRent}</li>
+                        <li className="">可還空位: {stopLocationInfo?.stopReturn}</li>
                     </ul>
                 </div>
             </Popup>
